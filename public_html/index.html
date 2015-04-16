@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <style>
+            html, body {
+                width: 100%;
+                height: 100%;
+            }
+
+            #sketch {
+                border: 10px solid gray;
+                height: 100%;
+                position: relative;
+            }
+
+            #paint{
+                //border: 10px solid gray;
+                height: 100%;
+                //position: relative;
+            }
+
+            #tmp_canvas {
+                position: absolute;
+                left: 0px; right: 0;
+                bottom: 0; top: 0;
+                cursor: crosshair;
+            }
+        </style>
+        <title>Start Painting</title>
+        <meta charset="windows-1252">
+        <meta name="viewport" content="width=device-width">
+    </head>
+    <body>
+        <button id="reset_button" value="Reset" onclick="reset_canvas()">Reset</button>
+        <div id="sketch">
+            <canvas id = "paint"></canvas>
+        </div>
+    </div>
+</body>
+</html>
+
+<script>
+
+    function getMousePos(canvas, evt) {
+        var rect = canvas.getBoundingClientRect();
+        return {
+            x: evt.clientX - rect.left,
+            y: evt.clientY - rect.top
+        };
+    }
+
+    function reset_canvas() {
+        var canvas = document.querySelector('#paint');
+        var ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+
+    (function() {
+
+        var canvas = document.querySelector('#paint');
+        var ctx = canvas.getContext('2d');
+
+        var sketch = document.querySelector('#sketch');
+        var sketch_style = getComputedStyle(sketch);
+        canvas.width = parseInt(sketch_style.getPropertyValue('width'));
+        canvas.height = parseInt(sketch_style.getPropertyValue('height'));
+
+
+        // Creating a tmp canvas
+        var tmp_canvas = document.createElement('canvas');
+        var tmp_ctx = tmp_canvas.getContext('2d');
+        tmp_ctx.lineWidth = 1;
+        tmp_ctx.lineJoin = 'round';
+        tmp_ctx.lineCap = 'round';
+        tmp_ctx.strokeStyle = 'black';
+        tmp_ctx.fillStyle = 'blue';
+        tmp_canvas.id = 'tmp_canvas';
+        tmp_canvas.width = canvas.width;
+        tmp_canvas.height = canvas.height;
+
+        sketch.appendChild(tmp_canvas);
+
+        var mouse = {x: 0, y: 0};
+        var start_mouse = {x: 0, y: 0};
+        var last_mouse = {x: 0, y: 0};
+
+
+        /* Mouse Capturing Work */
+        tmp_canvas.addEventListener('mousemove', function(e) {
+            mouse.x = typeof e.offsetX !== 'undefined' ? e.offsetX : e.layerX;
+            mouse.y = typeof e.offsetY !== 'undefined' ? e.offsetY : e.layerY;
+        }, false);
+
+
+        /* Drawing on Paint App */
+
+
+        tmp_canvas.addEventListener('mousedown', function(e) {
+            tmp_canvas.addEventListener('mousemove', onPaint, false);
+
+            mouse.x = typeof e.offsetX !== 'undefined' ? e.offsetX : e.layerX;
+            mouse.y = typeof e.offsetY !== 'undefined' ? e.offsetY : e.layerY;
+
+            start_mouse.x = mouse.x;
+            start_mouse.y = mouse.y;
+
+            onPaint();
+        }, false);
+
+        tmp_canvas.addEventListener('mouseup', function() {
+            tmp_canvas.removeEventListener('mousemove', onPaint, false);
+
+            // Writing down to real canvas now
+            ctx.drawImage(tmp_canvas, 0, 0);
+            // Clearing tmp canvas
+            tmp_ctx.clearRect(0, 0, tmp_canvas.width, tmp_canvas.height);
+
+        }, false);
+
+        tmp_canvas.addEventListener('dblclick', function(evt) {
+            var mousePos = getMousePos(canvas, evt);
+            var message = 'Mouse position: ' + mousePos.x + ',' + mousePos.y;
+            alert(message);
+        });
+
+        var onPaint = function() {
+
+            // Tmp canvas is always cleared up before drawing.
+            tmp_ctx.clearRect(0, 0, tmp_canvas.width, tmp_canvas.height);
+
+            var x = (mouse.x + start_mouse.x) / 2;
+            var y = (mouse.y + start_mouse.y) / 2;
+
+            var radius = Math.max(
+                    Math.abs(mouse.x - start_mouse.x),
+                    Math.abs(mouse.y - start_mouse.y)
+                    ) / 2;
+
+            tmp_ctx.beginPath();
+
+
+            var r = 255 * Math.random() | 0,
+                    g = 255 * Math.random() | 0,
+                    b = 255 * Math.random() | 0;
+            tempColor = "rgb(" + r + "," + g + "," + b + ")";
+            tmp_ctx.fillStyle = tempColor;
+
+            tmp_ctx.arc(x, y, radius, 0, Math.PI * 2, false);
+            tmp_ctx.fill();
+            // tmp_ctx.arc(x, y, 5, 0, Math.PI*2, false);
+            tmp_ctx.stroke();
+            tmp_ctx.closePath();
+
+        };
+
+    }());
+</script>
